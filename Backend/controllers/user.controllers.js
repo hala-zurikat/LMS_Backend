@@ -6,11 +6,24 @@ import {
   updateUser,
   deactivateUser,
 } from "../models/user.models.js";
+import bcrypt from "bcryptjs";
+
+export const loginUser = async (req, res) => {
+  const { email, enteredPassword } = req.body;
+
+  const user = await getByEmail(email);
+  if (!user) return res.status(404).json({ message: "User not found!" });
+
+  const isMatch = await bcrypt.compare(enteredPassword, user.password_hash);
+  if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
+
+  res.status(200).json({ message: "Login successful", user });
+};
 
 export const addUser = async (req, res) => {
   try {
-    const { name, email, passwordHash, role } = req.body;
-    const newUser = await createUser(name, email, passwordHash, role);
+    const { name, email, avatar, password_hash, role } = req.body;
+    const newUser = await createUser(name, email, avatar, password_hash, role);
     res.status(201).json(newUser);
   } catch (err) {
     res.status(500).json({ error: err.message });
