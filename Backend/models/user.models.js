@@ -1,12 +1,27 @@
 import { query } from "../config/db.js";
-
+import bcrypt from "bcryptjs";
 //Create new user
-export const createUser = async (name, email, password_hash, role = "user") => {
-  const result = await query(
-    "insert into users (name, email, password_hash, role) values ($1,$2,$3,$4) returning*",
-    [name, email, passwordHash, role]
-  );
-  return result.rows[0];
+export const createUser = async (
+  name,
+  email,
+  avatar,
+  password,
+  role = "user"
+) => {
+  try {
+    const saltRounds = 10;
+    const password_hash = await bcrypt.hash(password, saltRounds);
+
+    const result = await query(
+      "insert into users (name, email,avatar, password_hash, role) values ($1,$2,$3,$4,$5) returning *",
+      [name, email, avatar, password_hash, role]
+    );
+
+    return result.rows[0];
+  } catch (err) {
+    console.error("Error creating user:", err);
+    throw err;
+  }
 };
 
 //Read all users
