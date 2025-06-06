@@ -5,11 +5,15 @@ import {
   getLessonById,
   createLesson,
 } from "../models/lesson.models.js";
+import {
+  createLessonSchema,
+  updateLessonSchema,
+} from "../validations/lesson.validations.js";
 
 export const fetchAllLessons = async (req, res) => {
   try {
     const lessons = await getAllLessons();
-    res.json(lessons);
+    res.status(200).json(lessons);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -17,9 +21,13 @@ export const fetchAllLessons = async (req, res) => {
 
 export const fetchLesson = async (req, res) => {
   try {
-    const lesson = await getLessonById(req.params.id);
-    if (!lesson) return res.status(404).json({ message: "Lesson not found" });
-    res.json(lesson);
+    const { id } = req.params;
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid lesson ID" });
+
+    const lesson = await getLessonById(id);
+    if (!lesson) return res.status(404).json({ error: "Lesson not found" });
+
+    res.status(200).json(lesson);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -27,16 +35,27 @@ export const fetchLesson = async (req, res) => {
 
 export const addLesson = async (req, res) => {
   try {
+    const { error } = createLessonSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
     const newLesson = await createLesson(req.body);
     res.status(201).json(newLesson);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
 export const editLesson = async (req, res) => {
   try {
-    const updated = await updateLesson(req.params.id, req.body);
-    res.json(updated);
+    const { id } = req.params;
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid lesson ID" });
+    const { error } = updateLessonSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+    const updated = await updateLesson(id, req.body);
+    res.status(200).json(updated);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -44,8 +63,13 @@ export const editLesson = async (req, res) => {
 
 export const removeLesson = async (req, res) => {
   try {
-    await deleteLesson(req.params.id);
-    res.status(204).send();
+    const { id } = req.params;
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid lesson ID" });
+
+    const deleted = await deleteLesson(id);
+    if (!deleted) return res.status(404).json({ error: "Lesson not found" });
+
+    res.status(200).json({ message: "Lesson deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
