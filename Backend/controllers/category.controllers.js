@@ -5,10 +5,18 @@ import {
   updateCategory,
   deleteCategory,
 } from "../models/category.models.js";
-
+import {
+  createCategorySchema,
+  updateCategorySchema,
+} from "../validations/category.validations.js";
 // Create
 export const addCategory = async (req, res) => {
   try {
+    const { error } = createCategorySchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
     const { name } = req.body;
     const newCategory = await createCategory(name);
     res.status(201).json(newCategory);
@@ -21,7 +29,7 @@ export const addCategory = async (req, res) => {
 export const getCategories = async (req, res) => {
   try {
     const categories = await getAllCategories();
-    res.json(categories);
+    res.status(200).json(categories);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -30,11 +38,15 @@ export const getCategories = async (req, res) => {
 // Read by ID
 export const getCategory = async (req, res) => {
   try {
-    const category = await getCategoryById(req.params.id);
+    const id = req.params.id;
+    if (isNaN(id))
+      return res.status(400).json({ error: "Invalid category ID" });
+
+    const category = await getCategoryById(id);
     if (!category) {
-      return res.status(404).json({ message: "Category not found" });
+      return res.status(404).json({ error: "Category not found" });
     }
-    res.json(category);
+    res.status(200).json(category);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -43,9 +55,21 @@ export const getCategory = async (req, res) => {
 // Update
 export const editCategory = async (req, res) => {
   try {
+    const id = req.params.id;
+    if (isNaN(id))
+      return res.status(400).json({ error: "Invalid category ID" });
+
+    const { error } = updateCategorySchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ error: err.details[0].message });
+    }
+
     const { name } = req.body;
-    const updatedCategory = await updateCategory(req.params.id, name);
-    res.json(updatedCategory);
+    const updatedCategory = await updateCategory(id, name);
+    if (!updatedCategory) {
+      return res.status(404).json({ error: "Category not found" });
+    }
+    res.status(200).json(updatedCategory);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -54,7 +78,14 @@ export const editCategory = async (req, res) => {
 // Delete
 export const removeCategory = async (req, res) => {
   try {
-    await deleteCategory(req.params.id);
+    const id = req.params.id;
+    if (isNaN(id))
+      return res.status(400).json({ error: "Invalid category ID" });
+
+    const deletedCategory = await deleteCategory(id);
+    if (!deletedCategory) {
+      return res.status(404).json({ error: "Category not found" });
+    }
     res.status(204).send();
   } catch (err) {
     res.status(500).json({ error: err.message });
