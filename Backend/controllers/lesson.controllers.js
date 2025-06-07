@@ -8,7 +8,7 @@ import {
 import {
   createLessonSchema,
   updateLessonSchema,
-} from "../validations/lesson.validations.js";
+} from "../validations/lesson.validation.js";
 
 export const fetchAllLessons = async (req, res) => {
   try {

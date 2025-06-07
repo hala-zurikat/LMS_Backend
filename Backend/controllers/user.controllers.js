@@ -10,7 +10,7 @@ import bcrypt from "bcryptjs";
 import {
   createUserSchema,
   updateUserSchema,
-} from "../validations/user.validations.js";
+} from "../validations/user.validation.js";
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;

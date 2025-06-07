@@ -8,7 +8,7 @@ import {
 import {
   createCategorySchema,
   updateCategorySchema,
-} from "../validations/category.validations.js";
+} from "../validations/category.validation.js";
 // Create
 export const addCategory = async (req, res) => {
   try {
