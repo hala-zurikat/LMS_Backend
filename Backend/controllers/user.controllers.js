@@ -103,13 +103,14 @@ export const editUser = async (req, res) => {
 
 export const deleteUser = async (req, res) => {
   try {
-    const deletedUser = await deactivateUser(req.params.id);
-    if (!deletedUser) return res.status(404).json({ error: "User not found" });
-
-    res
-      .status(200)
-      .json({ message: "User deactivated successfully", user: deletedUser });
+    const id = parseInt(req.params.id);
+    const deletedUser = await deactivateUser(id);
+    res.status(200).json({
+      message: "User deactivated successfully",
+      user: deletedUser,
+    });
   } catch (err) {
+    console.error("Error in deleteUser:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
