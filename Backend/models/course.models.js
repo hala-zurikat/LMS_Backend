@@ -29,15 +29,13 @@ export const createCourse = async ({
   title,
   description,
   instructor_id,
-  category,
-  created_at,
-  updated_at,
+  category_id,
 }) => {
   try {
     const result = await query(
-      `INSERT INTO Courses (title, description, instructor_id, category, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [title, description, instructor_id, category, created_at, updated_at]
+      `INSERT INTO Courses (title, description, instructor_id, category_id, created_at)
+       VALUES ($1, $2, $3, $4, NOW()) RETURNING *`,
+      [title, description, instructor_id, category_id]
     );
     return result.rows[0];
   } catch (err) {
@@ -45,21 +43,26 @@ export const createCourse = async ({
     throw err;
   }
 };
-
 // Update course
 export const updateCourse = async (
   id,
-  { title, description, instructor_id, category, created_at, updated_at }
+  { title, description, instructor_id, category_id }
 ) => {
   try {
     if (isNaN(id) || id <= 0) throw new Error("Invalid course ID");
 
     const result = await query(
-      `UPDATE Courses
-       SET title = $1, description = $2, instructor_id = $3, category = $4, created_at = $5, updated_at = $6
-       WHERE id = $7 RETURNING *`,
-      [title, description, instructor_id, category, created_at, updated_at, id]
+      `UPDATE courses
+       SET title = $1,
+           description = $2,
+           instructor_id = $3,
+           category_id = $4,
+           updated_at = NOW()
+       WHERE id = $5
+       RETURNING *`,
+      [title, description, instructor_id, category_id, id]
     );
+
     return result.rows[0];
   } catch (err) {
     console.error("Error updating course:", err.message);

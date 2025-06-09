@@ -27,7 +27,7 @@ export const createUser = async ({ name, email, avatar, password, role }) => {
 // Get all users
 export const getAll = async () => {
   try {
-    const result = await query("SELECT * FROM users");
+    const result = await query("SELECT * FROM users where is_active=true ");
     return result.rows;
   } catch (err) {
     console.error("Error fetching users:", err.message);
