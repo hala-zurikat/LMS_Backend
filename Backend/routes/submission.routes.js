@@ -1,12 +1,17 @@
 import express from "express";
-import * as SubmissionController from "../controllers/submission.controllers.js";
+import submissionController from "../controllers/submission.controllers.js";
 
 const router = express.Router();
 
-router.get("/", SubmissionController.getAll);
-router.get("/:id", SubmissionController.getById);
-router.post("/", SubmissionController.create);
-router.put("/:id", SubmissionController.update);
-router.delete("/:id", SubmissionController.remove);
+router.get("/", submissionController.getAll);
+router.get("/:id", submissionController.getById);
+router.get(
+  "/assignment/:assignment_id",
+  submissionController.getByAssignmentId
+);
+router.get("/user/:user_id", submissionController.getByUserId);
+router.post("/", submissionController.create);
+router.put("/:id", submissionController.update);
+router.delete("/:id", submissionController.delete);
 
 export default router;

@@ -1,112 +1,127 @@
 import { query } from "../config/db.js";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 
-// Create new user
-export const createUser = async ({ name, email, avatar, password, role }) => {
-  try {
-    const cleanEmail = email.trim().toLowerCase();
-    const existing = await getByEmail(cleanEmail);
-    if (existing) {
-      throw new Error("User with this email already exists");
+export const UserModel = {
+  async createUser(data) {
+    try {
+      const {
+        name,
+        email,
+        password_hash,
+        role,
+        oauth_provider,
+        oauth_id,
+        is_active,
+        avatar,
+      } = data;
+
+      let hashedPassword = null;
+      if (password_hash) {
+        const saltRounds = 10;
+        hashedPassword = await bcrypt.hash(password_hash, saltRounds);
+      }
+
+      const result = await query(
+        `INSERT INTO users 
+          (name, email, password_hash, role, oauth_provider, oauth_id, is_active, avatar)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         RETURNING *`,
+        [
+          name,
+          email,
+          hashedPassword,
+          role,
+          oauth_provider,
+          oauth_id,
+          is_active ?? true,
+          avatar,
+        ]
+      );
+
+      return result.rows[0];
+    } catch (error) {
+      throw new Error("Error creating user: " + error.message);
     }
-    const saltRounds = 10;
-    const password_hash = await bcrypt.hash(password, saltRounds);
+  },
 
-    const result = await query(
-      "INSERT INTO users (name, email, avatar, password_hash, role) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [name, email, avatar, password_hash, role]
-    );
-
-    return result.rows[0];
-  } catch (err) {
-    console.error("Error creating user:", err.message);
-    throw err;
-  }
-};
-
-// Get all users
-export const getAll = async () => {
-  try {
-    const result = await query("SELECT * FROM users where is_active=true ");
-    return result.rows;
-  } catch (err) {
-    console.error("Error fetching users:", err.message);
-    throw err;
-  }
-};
-
-// Get user by ID
-export const getById = async (id) => {
-  try {
-    if (isNaN(id)) {
-      throw new Error("invalid user id");
+  async getAllUsers() {
+    try {
+      const result = await query("SELECT * FROM users");
+      return result.rows;
+    } catch (error) {
+      throw new Error("Error fetching users: " + error.message);
     }
-    const result = await query("SELECT * FROM users WHERE id = $1", [id]);
-    return result.rows[0];
-  } catch (err) {
-    console.error("Error fetching user by ID:", err.message);
-    throw err;
-  }
-};
+  },
 
-// Get user by Email
-export const getByEmail = async (email) => {
-  try {
-    const result = await query("SELECT * FROM users WHERE email = $1", [email]);
-    return result.rows[0];
-  } catch (err) {
-    console.error("Error fetching user by email:", err.message);
-    throw err;
-  }
-};
-
-// Update user
-export const updateUser = async ({
-  id,
-  name,
-  email,
-  avatar,
-  role,
-  is_active,
-}) => {
-  try {
-    if (isNaN(id)) {
-      throw new Error("invalid user id");
+  async getUserById(id) {
+    try {
+      const result = await query("SELECT * FROM users WHERE id = $1", [id]);
+      return result.rows[0];
+    } catch (error) {
+      throw new Error("Error fetching user: " + error.message);
     }
-    const result = await query(
-      "UPDATE users SET name=$1, email=$2, avatar=$3, role=$4, is_active=$5, updated_at=NOW() WHERE id=$6 RETURNING *",
-      [name, email, avatar, role, is_active, id]
-    );
+  },
 
-    if (result.rowCount === 0) {
-      throw new Error(`User with id ${id} not found`);
+  async updateUser(id, data) {
+    try {
+      const {
+        name,
+        email,
+        password_hash,
+        role,
+        oauth_provider,
+        oauth_id,
+        is_active,
+        avatar,
+      } = data;
+
+      let hashedPassword = null;
+      if (password_hash) {
+        const saltRounds = 10;
+        hashedPassword = await bcrypt.hash(password_hash, saltRounds);
+      }
+
+      const result = await query(
+        `UPDATE users SET 
+        name = $1,
+        email = $2,
+        password_hash = $3,
+        role = $4,
+        oauth_provider = $5,
+        oauth_id = $6,
+        is_active = $7,
+        avatar = $8,
+        updated_at = CURRENT_TIMESTAMP
+       WHERE id = $9
+       RETURNING *`,
+        [
+          name,
+          email,
+          hashedPassword,
+          role,
+          oauth_provider,
+          oauth_id,
+          is_active,
+          avatar,
+          id,
+        ]
+      );
+
+      return result.rows[0];
+    } catch (error) {
+      throw new Error("Error updating user: " + error.message);
     }
+  },
 
-    return result.rows[0];
-  } catch (err) {
-    console.error("Error updating user:", err.message);
-    throw err;
-  }
-};
-
-// Deactivate user
-export const deactivateUser = async (id) => {
-  try {
-    if (isNaN(id)) {
-      throw new Error("invalid user id");
+  async deleteUser(id) {
+    try {
+      const result = await query(
+        "DELETE FROM users WHERE id = $1 RETURNING *",
+        [id]
+      );
+      return result.rows[0];
+    } catch (error) {
+      throw new Error("Error deleting user: " + error.message);
     }
-    const result = await query(
-      "UPDATE users SET is_active = false, updated_at = NOW() WHERE id = $1 RETURNING *",
-      [id]
-    );
-
-    if (result.rowCount === 0) {
-      throw new Error(`User with id ${id} not found`);
-    }
-
-    return result.rows[0];
-  } catch (err) {
-    console.error("Error deactivating user:", err.message);
-    throw err;
-  }
+  },
 };
