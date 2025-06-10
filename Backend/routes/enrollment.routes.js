@@ -1,18 +1,12 @@
 import express from "express";
-import {
-  getAll,
-  getOne,
-  create,
-  update,
-  remove,
-} from "../controllers/enrollment.controllers.js";
+import { EnrollmentController } from "../controllers/enrollment.controllers.js";
 
 const router = express.Router();
 
-router.get("/", getAll);
-router.get("/:id", getOne);
-router.post("/", create);
-router.put("/:id", update);
-router.delete("/:id", remove);
+router.get("/", EnrollmentController.getAll);
+router.get("/:id", EnrollmentController.getById);
+router.post("/", EnrollmentController.create);
+router.put("/:id", EnrollmentController.update);
+router.delete("/:id", EnrollmentController.delete);
 
 export default router;

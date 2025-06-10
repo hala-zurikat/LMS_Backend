@@ -1,16 +1,13 @@
 import Joi from "joi";
 
-//Quizzes (id, lesson_id, question, options, correct_answer)
-
-export const createQuizzSchema = Joi.object({
-  lesson_id: Joi.number().required(),
+const quizSchema = Joi.object({
+  lesson_id: Joi.number().integer().positive().required(),
   question: Joi.string().required(),
-  options: Joi.array().items(Joi.string()).required(),
+  options: Joi.array().items(Joi.string()).min(2).required(),
   correct_answer: Joi.string().required(),
+  max_score: Joi.number().integer().min(1).default(10),
 });
-export const updateQuizzSchema = Joi.object({
-  lesson_id: Joi.number(),
-  question: Joi.string(),
-  options: Joi.array().items(Joi.string()),
-  correct_answer: Joi.string(),
-});
+
+export function validateQuiz(data) {
+  return quizSchema.validate(data, { abortEarly: false });
+}

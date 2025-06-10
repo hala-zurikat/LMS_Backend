@@ -1,136 +1,95 @@
-import {
-  allQuizzes,
-  createQuizz,
-  updateQuizz,
-  getQuizzesByLessonId,
-  getQuizzesById,
-  deleteQuizz,
-} from "../models/quiz.models.js";
-import {
-  createQuizzSchema,
-  updateQuizzSchema,
-} from "../validations/quiz.validation.js";
+import QuizModel from "../models/quiz.models.js";
+import { validateQuiz } from "../validations/quiz.validation.js";
 
-// Get all quizzes
-export const getAllQuizzes = async (req, res) => {
-  try {
-    const quizzes = await allQuizzes();
-    return res.status(200).json(quizzes);
-  } catch (error) {
-    console.error("Error getting all quizzes:", error.message);
-    return res.status(500).json({ message: "Internal server error." });
-  }
-};
-
-// Get quiz by ID
-export const getQuizById = async (req, res) => {
-  const { id } = req.params;
-  const quizId = parseInt(id);
-
-  if (isNaN(quizId) || quizId <= 0) {
-    return res.status(400).json({ message: "Invalid quiz ID." });
-  }
-
-  try {
-    const quiz = await getQuizzesById(quizId);
-    if (!quiz) {
-      return res.status(404).json({ message: "Quiz not found." });
+const quizController = {
+  async getAll(req, res) {
+    try {
+      const quizzes = await QuizModel.getAll();
+      res.json(quizzes);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
-    return res.status(200).json(quiz);
-  } catch (error) {
-    console.error("Error getting quiz by ID:", error.message);
-    return res.status(500).json({ message: "Internal server error." });
-  }
-};
+  },
 
-// Get quizzes by lesson ID
-export const getQuizzesByLesson = async (req, res) => {
-  const { lesson_id } = req.params;
-  const lessonId = parseInt(lesson_id);
+  async getById(req, res) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: "Invalid quiz id" });
 
-  if (isNaN(lessonId) || lessonId <= 0) {
-    return res.status(400).json({ message: "Invalid lesson ID." });
-  }
+      const quiz = await QuizModel.getById(id);
+      if (!quiz) return res.status(404).json({ error: "Quiz not found" });
 
-  try {
-    const quizzes = await getQuizzesByLessonId(lessonId);
-    return res.status(200).json(quizzes);
-  } catch (error) {
-    console.error("Error getting quizzes by lesson ID:", error.message);
-    return res.status(500).json({ message: "Internal server error." });
-  }
-};
-
-// Create new quiz
-export const addQuiz = async (req, res) => {
-  const { error } = createQuizzSchema.validate(req.body);
-  if (error) {
-    return res.status(400).json({ message: error.details[0].message });
-  }
-
-  const { lesson_id, question, options, correct_answer } = req.body;
-
-  try {
-    const newQuiz = await createQuizz(
-      lesson_id,
-      question,
-      options,
-      correct_answer
-    );
-    return res.status(201).json(newQuiz);
-  } catch (error) {
-    console.error("Error creating quiz:", error.message);
-    return res.status(500).json({ message: "Internal server error." });
-  }
-};
-
-// Update quiz
-export const editQuiz = async (req, res) => {
-  const { id } = req.params;
-  const quizId = parseInt(id);
-
-  if (isNaN(quizId) || quizId <= 0) {
-    return res.status(400).json({ message: "Invalid quiz ID." });
-  }
-
-  const { error } = updateQuizzSchema.validate(req.body);
-  if (error) {
-    return res.status(400).json({ message: error.details[0].message });
-  }
-
-  try {
-    const updatedQuiz = await updateQuizz(quizId, req.body);
-    if (!updatedQuiz) {
-      return res.status(404).json({ message: "Quiz not found to update." });
+      res.json(quiz);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
+  },
 
-    return res.status(200).json(updatedQuiz);
-  } catch (error) {
-    console.error("Error updating quiz:", error.message);
-    return res.status(500).json({ message: "Internal server error." });
-  }
-};
+  async getByLessonId(req, res) {
+    try {
+      const lesson_id = parseInt(req.params.lesson_id, 10);
+      if (isNaN(lesson_id))
+        return res.status(400).json({ error: "Invalid lesson id" });
 
-// Delete quiz
-export const removeQuiz = async (req, res) => {
-  const { id } = req.params;
-  const quizId = parseInt(id);
-
-  if (isNaN(quizId) || quizId <= 0) {
-    return res.status(400).json({ message: "Invalid quiz ID." });
-  }
-
-  try {
-    const deletedQuiz = await deleteQuizz(quizId);
-    if (!deletedQuiz) {
-      return res.status(404).json({ message: "Quiz not found to delete." });
+      const quizzes = await QuizModel.getByLessonId(lesson_id);
+      res.json(quizzes);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
+  },
 
-    return res
-      .status(200)
-      .json({ message: "Quiz deleted successfully.", quiz: deletedQuiz });
-  } catch (error) {
-    console.error("Error deleting quiz:", error.message);
-    return res.status(500).json({ message: "Internal server error." });
-  }
+  async create(req, res) {
+    try {
+      const { error, value } = validateQuiz(req.body);
+      if (error) {
+        return res
+          .status(400)
+          .json({ errors: error.details.map((e) => e.message) });
+      }
+
+      const newQuiz = await QuizModel.create(value);
+      res.status(201).json(newQuiz);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  async update(req, res) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: "Invalid quiz id" });
+
+      const exists = await QuizModel.exists(id);
+      if (!exists) return res.status(404).json({ error: "Quiz not found" });
+
+      const { error, value } = validateQuiz(req.body);
+      if (error) {
+        return res
+          .status(400)
+          .json({ errors: error.details.map((e) => e.message) });
+      }
+
+      const updatedQuiz = await QuizModel.update(id, value);
+      res.json(updatedQuiz);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  async delete(req, res) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: "Invalid quiz id" });
+
+      const deletedQuiz = await QuizModel.delete(id);
+      if (!deletedQuiz)
+        return res.status(404).json({ error: "Quiz not found" });
+
+      res.json({ message: "Quiz deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
 };
+
+export default quizController;
