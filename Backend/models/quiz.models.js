@@ -1,97 +1,115 @@
 import { query } from "../config/db.js";
 
-// Get all quizzes
-export const allQuizzes = async () => {
-  try {
-    const result = await query("SELECT * FROM Quizzes");
-    return result.rows;
-  } catch (err) {
-    console.error("Failed to fetch all quizzes:", err.message);
-    throw err;
-  }
-};
-
-// Create new quiz
-export const createQuizz = async (
-  lesson_id,
-  question,
-  options,
-  correct_answer
-) => {
-  try {
-    const result = await query(
-      "INSERT INTO Quizzes (lesson_id, question, options, correct_answer) VALUES ($1, $2, $3, $4) RETURNING *",
-      [lesson_id, question, options, correct_answer]
-    );
-    return result.rows[0];
-  } catch (err) {
-    console.error("Failed to create quiz:", err.message);
-    throw err;
-  }
-};
-
-// Update quiz
-export const updateQuizz = async (
-  id,
-  { lesson_id, question, options, correct_answer }
-) => {
-  try {
-    if (!id || isNaN(id) || id <= 0) {
-      throw new Error("Invalid quiz ID");
+const QuizModel = {
+  async getAll() {
+    try {
+      const res = await query("SELECT * FROM quizzes ORDER BY created_at DESC");
+      return res.rows;
+    } catch (error) {
+      throw new Error("Error fetching quizzes: " + error.message);
     }
+  },
 
-    const result = await query(
-      "UPDATE Quizzes SET lesson_id=$1, question=$2, options=$3, correct_answer=$4 WHERE id=$5 RETURNING *",
-      [lesson_id, question, options, correct_answer, id]
-    );
-    return result.rows[0];
-  } catch (err) {
-    console.error("Failed to update quiz:", err.message);
-    throw err;
-  }
-};
+  async getById(id) {
+    try {
+      if (!Number.isInteger(id) || id <= 0) throw new Error("Invalid quiz id");
 
-// Get quizzes by lesson_id
-export const getQuizzesByLessonId = async (lesson_id) => {
-  try {
-    const result = await query("SELECT * FROM Quizzes WHERE lesson_id=$1", [
-      lesson_id,
-    ]);
-    return result.rows;
-  } catch (err) {
-    console.error("Failed to get quizzes by lesson_id:", err.message);
-    throw err;
-  }
-};
-
-// Get quiz by id
-export const getQuizzesById = async (id) => {
-  try {
-    if (!id || isNaN(id) || id <= 0) {
-      throw new Error("Invalid quiz ID");
+      const res = await query("SELECT * FROM quizzes WHERE id = $1", [id]);
+      if (res.rows.length === 0) {
+        return null;
+      }
+      return res.rows[0];
+    } catch (error) {
+      throw new Error("Error fetching quiz by id: " + error.message);
     }
+  },
 
-    const result = await query("SELECT * FROM Quizzes WHERE id=$1", [id]);
-    return result.rows[0];
-  } catch (err) {
-    console.error("Failed to get quiz by id:", err.message);
-    throw err;
-  }
-};
+  async getByLessonId(lesson_id) {
+    try {
+      if (!Number.isInteger(lesson_id) || lesson_id <= 0)
+        throw new Error("Invalid lesson id");
 
-// Delete quiz
-export const deleteQuizz = async (id) => {
-  try {
-    if (!id || isNaN(id) || id <= 0) {
-      throw new Error("Invalid quiz ID");
+      const res = await query(
+        "SELECT * FROM quizzes WHERE lesson_id = $1 ORDER BY created_at DESC",
+        [lesson_id]
+      );
+      return res.rows;
+    } catch (error) {
+      throw new Error("Error fetching quizzes by lesson id: " + error.message);
     }
+  },
 
-    const result = await query("DELETE FROM Quizzes WHERE id=$1 RETURNING *", [
-      id,
-    ]);
-    return result.rows[0];
-  } catch (err) {
-    console.error("Failed to delete quiz:", err.message);
-    throw err;
-  }
+  async create({
+    lesson_id,
+    question,
+    options,
+    correct_answer,
+    max_score = 10,
+  }) {
+    try {
+      if (!Number.isInteger(lesson_id) || lesson_id <= 0)
+        throw new Error("Invalid lesson id");
+
+      const res = await query(
+        `INSERT INTO quizzes (lesson_id, question, options, correct_answer, max_score)
+         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [lesson_id, question, options, correct_answer, max_score]
+      );
+      return res.rows[0];
+    } catch (error) {
+      throw new Error("Error creating quiz: " + error.message);
+    }
+  },
+
+  async update(
+    id,
+    { lesson_id, question, options, correct_answer, max_score = 10 }
+  ) {
+    try {
+      if (!Number.isInteger(id) || id <= 0) throw new Error("Invalid quiz id");
+      if (!Number.isInteger(lesson_id) || lesson_id <= 0)
+        throw new Error("Invalid lesson id");
+
+      const res = await query(
+        `UPDATE quizzes SET lesson_id = $1, question = $2, options = $3, correct_answer = $4, max_score = $5, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $6 RETURNING *`,
+        [lesson_id, question, options, correct_answer, max_score, id]
+      );
+      if (res.rows.length === 0) {
+        return null;
+      }
+      return res.rows[0];
+    } catch (error) {
+      throw new Error("Error updating quiz: " + error.message);
+    }
+  },
+
+  async delete(id) {
+    try {
+      if (!Number.isInteger(id) || id <= 0) throw new Error("Invalid quiz id");
+
+      const res = await query("DELETE FROM quizzes WHERE id = $1 RETURNING *", [
+        id,
+      ]);
+      if (res.rows.length === 0) {
+        return null;
+      }
+      return res.rows[0];
+    } catch (error) {
+      throw new Error("Error deleting quiz: " + error.message);
+    }
+  },
+
+  async exists(id) {
+    try {
+      if (!Number.isInteger(id) || id <= 0) throw new Error("Invalid quiz id");
+
+      const res = await query("SELECT 1 FROM quizzes WHERE id = $1", [id]);
+      return res.rows.length > 0;
+    } catch (error) {
+      throw new Error("Error checking quiz existence: " + error.message);
+    }
+  },
 };
+
+export default QuizModel;

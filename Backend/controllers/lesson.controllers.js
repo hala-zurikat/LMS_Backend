@@ -1,76 +1,102 @@
-import {
-  deleteLesson,
-  getAllLessons,
-  updateLesson,
-  getLessonById,
-  createLesson,
-} from "../models/lesson.models.js";
-import {
-  createLessonSchema,
-  updateLessonSchema,
-} from "../validations/lesson.validation.js";
+import LessonModel from "../models/lesson.models.js";
+import { lessonSchema } from "../validations/lesson.validation.js";
 
-export const fetchAllLessons = async (req, res) => {
-  try {
-    const lessons = await getAllLessons();
-    res.status(200).json(lessons);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-export const fetchLesson = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid lesson ID" });
-
-    const lesson = await getLessonById(id);
-    if (!lesson) return res.status(404).json({ error: "Lesson not found" });
-
-    res.status(200).json(lesson);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-export const addLesson = async (req, res) => {
-  try {
-    const { error } = createLessonSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ error: error.details[0].message });
+const lessonController = {
+  async getAll(req, res) {
+    try {
+      const lessons = await LessonModel.getAll();
+      res.json(lessons);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
-    const newLesson = await createLesson(req.body);
-    res.status(201).json(newLesson);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+  },
 
-export const editLesson = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid lesson ID" });
-    const { error } = updateLessonSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ error: error.details[0].message });
+  async getById(req, res) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id))
+        return res.status(400).json({ error: "Invalid lesson id" });
+
+      const lesson = await LessonModel.getById(id);
+      if (!lesson) return res.status(404).json({ error: "Lesson not found" });
+
+      res.json(lesson);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
-    const updated = await updateLesson(id, req.body);
-    res.status(200).json(updated);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  },
+
+  async getByModuleId(req, res) {
+    try {
+      const module_id = parseInt(req.params.module_id, 10);
+      if (isNaN(module_id))
+        return res.status(400).json({ error: "Invalid module id" });
+
+      const lessons = await LessonModel.getByModuleId(module_id);
+      res.json(lessons);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  async create(req, res) {
+    try {
+      const { error, value } = lessonSchema.validate(req.body, {
+        abortEarly: false,
+      });
+      if (error) {
+        return res
+          .status(400)
+          .json({ errors: error.details.map((e) => e.message) });
+      }
+
+      const newLesson = await LessonModel.create(value);
+      res.status(201).json(newLesson);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  async update(req, res) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id))
+        return res.status(400).json({ error: "Invalid lesson id" });
+
+      const exists = await LessonModel.exists(id);
+      if (!exists) return res.status(404).json({ error: "Lesson not found" });
+
+      const { error, value } = lessonSchema.validate(req.body, {
+        abortEarly: false,
+      });
+      if (error) {
+        return res
+          .status(400)
+          .json({ errors: error.details.map((e) => e.message) });
+      }
+
+      const updatedLesson = await LessonModel.update(id, value);
+      res.json(updatedLesson);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  async delete(req, res) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id))
+        return res.status(400).json({ error: "Invalid lesson id" });
+
+      const deletedLesson = await LessonModel.delete(id);
+      if (!deletedLesson)
+        return res.status(404).json({ error: "Lesson not found" });
+
+      res.json({ message: "Lesson deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
 };
 
-export const removeLesson = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid lesson ID" });
-
-    const deleted = await deleteLesson(id);
-    if (!deleted) return res.status(404).json({ error: "Lesson not found" });
-
-    res.status(200).json({ message: "Lesson deleted successfully" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+export default lessonController;

@@ -1,17 +1,13 @@
-import expree from "express";
-import {
-  fetchAllLessons,
-  fetchLesson,
-  addLesson,
-  editLesson,
-  removeLesson,
-} from "../controllers/lesson.controllers.js";
-const router = expree.Router();
+import express from "express";
+import lessonController from "../controllers/lesson.controllers.js";
 
-router.get("/", fetchAllLessons);
-router.get("/:id", fetchLesson);
-router.post("/", addLesson);
-router.put("/:id", editLesson);
-router.delete("/:id", removeLesson);
+const router = express.Router();
+
+router.get("/", lessonController.getAll);
+router.get("/:id", lessonController.getById);
+router.get("/module/:module_id", lessonController.getByModuleId);
+router.post("/", lessonController.create);
+router.put("/:id", lessonController.update);
+router.delete("/:id", lessonController.delete);
 
 export default router;

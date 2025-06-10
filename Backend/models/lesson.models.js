@@ -1,126 +1,134 @@
 import { query } from "../config/db.js";
 
-// Get all lessons
-export const getAllLessons = async () => {
-  try {
-    const result = await query(
-      'SELECT * FROM lessons ORDER BY module_id, "order"'
-    );
-    return result.rows;
-  } catch (err) {
-    console.error("Error fetching lessons:", err.message);
-    throw err;
-  }
-};
-
-// Get lesson by ID
-export const getLessonById = async (id) => {
-  try {
-    if (isNaN(id)) {
-      throw new Error("invalid lesson id");
+const LessonModel = {
+  async getAll() {
+    try {
+      const res = await query('SELECT * FROM lessons ORDER BY "order" ASC');
+      return res.rows;
+    } catch (error) {
+      throw new Error("Error fetching lessons: " + error.message);
     }
-    const result = await query("SELECT * FROM lessons WHERE id = $1", [id]);
-    return result.rows[0];
-  } catch (err) {
-    console.error("Error fetching lesson by ID:", err.message);
-    throw err;
-  }
-};
+  },
 
-// Update lesson
-export const updateLesson = async (id, lesson) => {
-  try {
-     if (isNaN(id)) {
-      throw new Error("invalid lesson id");
+  async getById(id) {
+    try {
+      if (!Number.isInteger(id) || id <= 0)
+        throw new Error("Invalid lesson id");
+
+      const res = await query("SELECT * FROM lessons WHERE id = $1", [id]);
+      if (res.rows.length === 0) return null;
+      return res.rows[0];
+    } catch (error) {
+      throw new Error("Error fetching lesson by id: " + error.message);
     }
-    const {
+  },
+
+  async getByModuleId(module_id) {
+    try {
+      if (!Number.isInteger(module_id) || module_id <= 0)
+        throw new Error("Invalid module id");
+
+      const res = await query(
+        'SELECT * FROM lessons WHERE module_id = $1 ORDER BY "order" ASC',
+        [module_id]
+      );
+      return res.rows;
+    } catch (error) {
+      throw new Error("Error fetching lessons by module id: " + error.message);
+    }
+  },
+
+  async create({
+    module_id,
+    title,
+    content_type,
+    content_url = null,
+    duration = 0,
+    order,
+    is_free = false,
+  }) {
+    try {
+      if (!Number.isInteger(module_id) || module_id <= 0)
+        throw new Error("Invalid module id");
+
+      const res = await query(
+        `INSERT INTO lessons 
+          (module_id, title, content_type, content_url, duration, "order", is_free) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+        [module_id, title, content_type, content_url, duration, order, is_free]
+      );
+      return res.rows[0];
+    } catch (error) {
+      throw new Error("Error creating lesson: " + error.message);
+    }
+  },
+
+  async update(
+    id,
+    {
       module_id,
       title,
       content_type,
-      content_url,
-      duration,
+      content_url = null,
+      duration = 0,
       order,
-      is_free,
-    } = lesson;
+      is_free = false,
+    }
+  ) {
+    try {
+      if (!Number.isInteger(id) || id <= 0)
+        throw new Error("Invalid lesson id");
+      if (!Number.isInteger(module_id) || module_id <= 0)
+        throw new Error("Invalid module id");
 
-    const result = await query(
-      `UPDATE lessons SET 
-        module_id = $1,
-        title = $2,
-        content_type = $3,
-        content_url = $4,
-        duration = $5,
-        "order" = $6,
-        is_free = $7,
-        updated_at = NOW()
-       WHERE id = $8 RETURNING *`,
-      [
-        module_id,
-        title,
-        content_type,
-        content_url,
-        duration,
-        order,
-        is_free,
+      const res = await query(
+        `UPDATE lessons SET module_id = $1, title = $2, content_type = $3, content_url = $4, 
+         duration = $5, "order" = $6, is_free = $7, updated_at = CURRENT_TIMESTAMP 
+         WHERE id = $8 RETURNING *`,
+        [
+          module_id,
+          title,
+          content_type,
+          content_url,
+          duration,
+          order,
+          is_free,
+          id,
+        ]
+      );
+      if (res.rows.length === 0) return null;
+      return res.rows[0];
+    } catch (error) {
+      throw new Error("Error updating lesson: " + error.message);
+    }
+  },
+
+  async delete(id) {
+    try {
+      if (!Number.isInteger(id) || id <= 0)
+        throw new Error("Invalid lesson id");
+
+      const res = await query("DELETE FROM lessons WHERE id = $1 RETURNING *", [
         id,
-      ]
-    );
-
-    if (result.rowCount === 0) {
-      throw new Error(`Lesson with id ${id} not found`);
+      ]);
+      if (res.rows.length === 0) return null;
+      return res.rows[0];
+    } catch (error) {
+      throw new Error("Error deleting lesson: " + error.message);
     }
+  },
 
-    return result.rows[0];
-  } catch (err) {
-    console.error("Error updating lesson:", err.message);
-    throw err;
-  }
+  async exists(id) {
+    try {
+      if (!Number.isInteger(id) || id <= 0)
+        throw new Error("Invalid lesson id");
+
+      const res = await query("SELECT 1 FROM lessons WHERE id = $1", [id]);
+      return res.rows.length > 0;
+    } catch (error) {
+      throw new Error("Error checking lesson existence: " + error.message);
+    }
+  },
 };
 
-// Create a lesson
-export const createLesson = async (lesson) => {
-  try {
-    const {
-      module_id,
-      title,
-      content_type,
-      content_url,
-      duration,
-      order,
-      is_free,
-    } = lesson;
-
-    const result = await query(
-      `INSERT INTO lessons (module_id, title, content_type, content_url, duration, "order", is_free, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW()) RETURNING *`,
-      [module_id, title, content_type, content_url, duration, order, is_free]
-    );
-
-    return result.rows[0];
-  } catch (err) {
-    console.error("Error creating lesson:", err.message);
-    throw err;
-  }
-};
-
-// Delete lesson
-export const deleteLesson = async (id) => {
-  try {
-     if (isNaN(id)) {
-      throw new Error("invalid lesson id");
-    }
-    const result = await query(
-      "DELETE FROM lessons WHERE id = $1 RETURNING *",
-      [id]
-    );
-
-    if (result.rowCount === 0) {
-      throw new Error(`Lesson with id ${id} not found`);
-    }
-
-    return result.rows[0]||null;
-  } catch (err) {
-    console.error("Error deleting lesson:", err.message);
-    throw err;
-  }
-};
+export default LessonModel;

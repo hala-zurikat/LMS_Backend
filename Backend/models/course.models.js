@@ -1,87 +1,113 @@
 import { query } from "../config/db.js";
 
-// Get all courses
-export const getAllCourses = async () => {
-  try {
-    const result = await query("SELECT * FROM Courses");
-    return result.rows;
-  } catch (err) {
-    console.error("Error getting courses:", err.message);
-    throw err;
-  }
-};
+export const CourseModel = {
+  async getAllCourses() {
+    try {
+      const result = await query("SELECT * FROM courses ORDER BY id");
+      return result.rows;
+    } catch (error) {
+      throw new Error("Error fetching courses: " + error.message);
+    }
+  },
 
-// Get course by ID
-export const getCourseById = async (id) => {
-  try {
-    if (isNaN(id) || id <= 0) throw new Error("Invalid course ID");
+  async getCourseById(id) {
+    try {
+      const result = await query("SELECT * FROM courses WHERE id = $1", [id]);
+      return result.rows[0];
+    } catch (error) {
+      throw new Error("Error fetching course: " + error.message);
+    }
+  },
 
-    const result = await query("SELECT * FROM Courses WHERE id = $1", [id]);
-    return result.rows[0];
-  } catch (err) {
-    console.error("Error getting course:", err.message);
-    throw err;
-  }
-};
+  async createCourse(data) {
+    try {
+      const {
+        title,
+        description,
+        instructor_id,
+        category_id,
+        price,
+        thumbnail_url,
+        is_published,
+        is_approved,
+      } = data;
 
-// Create new course
-export const createCourse = async ({
-  title,
-  description,
-  instructor_id,
-  category_id,
-}) => {
-  try {
-    const result = await query(
-      `INSERT INTO Courses (title, description, instructor_id, category_id, created_at)
-       VALUES ($1, $2, $3, $4, NOW()) RETURNING *`,
-      [title, description, instructor_id, category_id]
-    );
-    return result.rows[0];
-  } catch (err) {
-    console.error("Error creating course:", err.message);
-    throw err;
-  }
-};
-// Update course
-export const updateCourse = async (
-  id,
-  { title, description, instructor_id, category_id }
-) => {
-  try {
-    if (isNaN(id) || id <= 0) throw new Error("Invalid course ID");
+      const result = await query(
+        `INSERT INTO courses (title, description, instructor_id, category_id, price, thumbnail_url, is_published, is_approved)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         RETURNING *`,
+        [
+          title,
+          description,
+          instructor_id,
+          category_id,
+          price ?? 0.0,
+          thumbnail_url,
+          is_published ?? false,
+          is_approved ?? false,
+        ]
+      );
 
-    const result = await query(
-      `UPDATE courses
-       SET title = $1,
-           description = $2,
-           instructor_id = $3,
-           category_id = $4,
-           updated_at = NOW()
-       WHERE id = $5
-       RETURNING *`,
-      [title, description, instructor_id, category_id, id]
-    );
+      return result.rows[0];
+    } catch (error) {
+      throw new Error("Error creating course: " + error.message);
+    }
+  },
 
-    return result.rows[0];
-  } catch (err) {
-    console.error("Error updating course:", err.message);
-    throw err;
-  }
-};
+  async updateCourse(id, data) {
+    try {
+      const {
+        title,
+        description,
+        instructor_id,
+        category_id,
+        price,
+        thumbnail_url,
+        is_published,
+        is_approved,
+      } = data;
 
-// Delete course
-export const deleteCourse = async (id) => {
-  try {
-    if (isNaN(id) || id <= 0) throw new Error("Invalid course ID");
+      const result = await query(
+        `UPDATE courses SET
+          title = $1,
+          description = $2,
+          instructor_id = $3,
+          category_id = $4,
+          price = $5,
+          thumbnail_url = $6,
+          is_published = $7,
+          is_approved = $8,
+          updated_at = CURRENT_TIMESTAMP
+         WHERE id = $9
+         RETURNING *`,
+        [
+          title,
+          description,
+          instructor_id,
+          category_id,
+          price,
+          thumbnail_url,
+          is_published,
+          is_approved,
+          id,
+        ]
+      );
 
-    const result = await query(
-      "DELETE FROM Courses WHERE id = $1 RETURNING *",
-      [id]
-    );
-    return result.rows[0];
-  } catch (err) {
-    console.error("Error deleting course:", err.message);
-    throw err;
-  }
+      return result.rows[0];
+    } catch (error) {
+      throw new Error("Error updating course: " + error.message);
+    }
+  },
+
+  async deleteCourse(id) {
+    try {
+      const result = await query(
+        `DELETE FROM courses WHERE id = $1 RETURNING *`,
+        [id]
+      );
+      return result.rows[0];
+    } catch (error) {
+      throw new Error("Error deleting course: " + error.message);
+    }
+  },
 };
