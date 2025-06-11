@@ -1,12 +1,21 @@
-import express from "express";
-import { UserController } from "../controllers/user.controllers.js";
+import { Router } from "express";
+import {
+  getUsers,
+  getUser,
+  updateUser,
+  deleteUser,
+} from "../controllers/user.controllers.js";
+import { authenticate, authorize } from "../middleware/auth.js";
 
-const router = express.Router();
+const router = Router();
+// Get all users (admin only)
+router.get("/", authenticate, authorize("admin"), getUsers);
+// Get user by ID (admin, or user themselves)
+router.get("/:id", authenticate, getUser);
+// Update user (admin can update any user, users can update themselves)
+router.put("/:id", authenticate, updateUser);
 
-router.get("/", UserController.getAll);
-router.get("/:id", UserController.getById);
-router.post("/", UserController.create);
-router.put("/:id", UserController.update);
-router.delete("/:id", UserController.delete);
+// Delete user (admin only, soft delete)
+router.delete("/:id", authenticate, authorize("admin"), deleteUser);
 
 export default router;
