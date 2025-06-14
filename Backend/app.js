@@ -51,14 +51,15 @@ app.use(passport.session());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(helmet());
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "*",
+    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
 // 5. Rate limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 دقيقة
