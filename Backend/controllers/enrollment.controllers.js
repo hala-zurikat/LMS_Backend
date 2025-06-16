@@ -26,17 +26,49 @@ export const EnrollmentController = {
 
   async create(req, res) {
     try {
-      const { error } = enrollmentSchema.validate(req.body);
+      // اصنع object كامل مع user_id من req.user أو req.session
+      const enrollmentData = {
+        user_id: req.user?.id || req.session?.userId, // تأكد من وجود user في req
+        course_id: req.body.course_id,
+        enrolled_at: new Date(), // ممكن تعطي تاريخ التسجيل تلقائياً
+      };
+
+      // تحقق من صحة البيانات
+      const { error } = enrollmentSchema.validate(enrollmentData);
       if (error)
         return res.status(400).json({ error: error.details[0].message });
 
-      const newEnrollment = await EnrollmentModel.create(req.body);
+      // تحقق من التسجيل المسبق
+      const existingEnrollment = await EnrollmentModel.findByUserAndCourse(
+        enrollmentData.user_id,
+        enrollmentData.course_id
+      );
+      if (existingEnrollment) {
+        return res
+          .status(409)
+          .json({ error: "You are already enrolled in this course" });
+      }
+
+      // إنشاء التسجيل
+      const newEnrollment = await EnrollmentModel.create(enrollmentData);
       res.status(201).json(newEnrollment);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   },
-
+  async getMyEnrollments(req, res) {
+    try {
+      const userId = req.user?.id || req.session?.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "User not authenticated" });
+      }
+      const courses = await EnrollmentModel.findCoursesByUser(userId);
+      res.json(enrollments);
+    } catch (error) {
+      console.error("Error fetching user enrollments:", error);
+      res.status(500).json({ error: error.message });
+    }
+  },
   async update(req, res) {
     const { id } = req.params;
     try {

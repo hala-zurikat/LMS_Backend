@@ -21,7 +21,55 @@ export const EnrollmentModel = {
       throw new Error("Error fetching enrollment by ID: " + error.message);
     }
   },
-
+  async findByUserAndCourse(user_id, course_id) {
+    try {
+      const result = await query(
+        "SELECT * FROM enrollments WHERE user_id = $1 AND course_id = $2 LIMIT 1",
+        [user_id, course_id]
+      );
+      return result.rows[0] || null; // إذا موجودة ترجع الصف، إذا مش موجودة ترجع null
+    } catch (error) {
+      throw new Error(
+        "Error finding enrollment by user and course: " + error.message
+      );
+    }
+  },
+  async findCoursesByUser(user_id) {
+    try {
+      const result = await query(
+        `
+      SELECT c.*
+      FROM enrollments e
+      JOIN courses c ON e.course_id = c.id
+      WHERE e.user_id = $1
+      ORDER BY e.enrolled_at DESC
+      `,
+        [user_id]
+      );
+      return result.rows;
+    } catch (error) {
+      throw new Error(
+        "Error fetching enrolled courses for user: " + error.message
+      );
+    }
+  },
+  async findCoursesByUser(user_id) {
+    try {
+      const result = await query(
+        `SELECT 
+         c.* 
+       FROM enrollments e
+       JOIN courses c ON e.course_id = c.id
+       WHERE e.user_id = $1`,
+        [user_id]
+      );
+      return result.rows;
+    } catch (error) {
+      throw new Error(
+        "Error fetching user's enrolled courses: " + error.message
+      );
+    }
+  },
   async create(data) {
     try {
       const { user_id, course_id, enrolled_at, completed_at, progress } = data;
