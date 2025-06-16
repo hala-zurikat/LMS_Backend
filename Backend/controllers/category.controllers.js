@@ -5,6 +5,9 @@ export const CategoryController = {
   async getAll(req, res) {
     try {
       const categories = await CategoryModel.getAllCategories();
+
+      console.log("Categories from DB:", categories);
+
       res.json(categories);
     } catch (err) {
       res
@@ -12,7 +15,6 @@ export const CategoryController = {
         .json({ error: "Error retrieving categories", details: err.message });
     }
   },
-
   async getById(req, res) {
     try {
       const id = parseInt(req.params.id);
