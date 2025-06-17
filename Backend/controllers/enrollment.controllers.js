@@ -62,13 +62,16 @@ export const EnrollmentController = {
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
+
       const courses = await EnrollmentModel.findCoursesByUser(userId);
-      res.json(enrollments);
+
+      res.json(courses); // ✅ هذا الصح
     } catch (error) {
       console.error("Error fetching user enrollments:", error);
       res.status(500).json({ error: error.message });
     }
   },
+
   async update(req, res) {
     const { id } = req.params;
     try {

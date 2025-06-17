@@ -3,16 +3,38 @@ import { query } from "../config/db.js";
 export const CourseModel = {
   async getAllCourses() {
     try {
-      const result = await query("SELECT * FROM courses ORDER BY id");
+      const result = await query(
+        `SELECT 
+         courses.*, 
+         users.name AS instructor_name
+       FROM 
+         courses
+       JOIN 
+         users ON courses.instructor_id = users.id
+       WHERE 
+         users.role = 'instructor'
+       ORDER BY 
+         courses.id`
+      );
       return result.rows;
     } catch (error) {
       throw new Error("Error fetching courses: " + error.message);
     }
   },
-
   async getCourseById(id) {
     try {
-      const result = await query("SELECT * FROM courses WHERE id = $1", [id]);
+      const result = await query(
+        `SELECT 
+     courses.*, 
+     users.name AS instructor_name
+   FROM 
+     courses
+   JOIN 
+     users ON courses.instructor_id = users.id
+   WHERE 
+     courses.id = $1`,
+        [id]
+      );
       return result.rows[0];
     } catch (error) {
       throw new Error("Error fetching course: " + error.message);
@@ -98,7 +120,27 @@ export const CourseModel = {
       throw new Error("Error updating course: " + error.message);
     }
   },
-
+  async getCoursesByCategory(categoryId) {
+    try {
+      const result = await query(
+        `SELECT 
+         courses.*, 
+         users.name AS instructor_name
+       FROM 
+         courses
+       JOIN 
+         users ON courses.instructor_id = users.id
+       WHERE 
+         courses.category_id = $1
+       ORDER BY 
+         courses.id`,
+        [categoryId]
+      );
+      return result.rows;
+    } catch (error) {
+      throw new Error("Error fetching courses by category: " + error.message);
+    }
+  },
   async deleteCourse(id) {
     try {
       const result = await query(

@@ -4,7 +4,16 @@ import { courseSchema } from "../validations/course.validation.js";
 export const CourseController = {
   async getAll(req, res) {
     try {
-      const courses = await CourseModel.getAllCourses();
+      const { category_id } = req.query;
+
+      let courses;
+
+      if (category_id) {
+        courses = await CourseModel.getCoursesByCategory(category_id);
+      } else {
+        courses = await CourseModel.getAllCourses();
+      }
+
       res.json(courses);
     } catch (err) {
       res.status(500).json({ error: err.message });
