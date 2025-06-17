@@ -20,8 +20,10 @@ import assignmentRoutes from "./routes/assignment.routes.js";
 import submissionRoutes from "./routes/submission.routes.js";
 import { notFound, errorHandler } from "./middleware/error.js";
 import courseRoutes from "./routes/course.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
+import instructorRoutes from "./routes/instructor.routes.js";
 
-dotenv.config(); // تأكد إنها مفعلة في أول الكود لتحميل المتغيرات
+dotenv.config();
 
 const app = express();
 
@@ -85,6 +87,8 @@ app.use("/api/enrollments", enrollmentRoutes);
 app.use("/api/assignments", assignmentRoutes);
 app.use("/api/submissions", submissionRoutes);
 app.use("/api/courses", courseRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/instructor", instructorRoutes);
 
 // 8. Health check
 app.get("/health", (req, res) => res.json({ status: "OK" }));

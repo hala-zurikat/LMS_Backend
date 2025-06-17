@@ -38,9 +38,16 @@ export const EnrollmentModel = {
     try {
       const result = await query(
         `
-      SELECT c.*
+      SELECT 
+        c.id AS course_id,
+        c.title,
+        c.description,
+        c.thumbnail_url,
+        u.name AS instructor_name,
+        e.progress
       FROM enrollments e
       JOIN courses c ON e.course_id = c.id
+      JOIN users u ON c.instructor_id = u.id
       WHERE e.user_id = $1
       ORDER BY e.enrolled_at DESC
       `,
@@ -53,23 +60,7 @@ export const EnrollmentModel = {
       );
     }
   },
-  async findCoursesByUser(user_id) {
-    try {
-      const result = await query(
-        `SELECT 
-         c.* 
-       FROM enrollments e
-       JOIN courses c ON e.course_id = c.id
-       WHERE e.user_id = $1`,
-        [user_id]
-      );
-      return result.rows;
-    } catch (error) {
-      throw new Error(
-        "Error fetching user's enrolled courses: " + error.message
-      );
-    }
-  },
+
   async create(data) {
     try {
       const { user_id, course_id, enrolled_at, completed_at, progress } = data;
