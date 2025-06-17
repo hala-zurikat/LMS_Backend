@@ -20,11 +20,14 @@ const UserModel = {
         parseInt(process.env.BCRYPT_SALT_ROUNDS)
       );
     }
+
+    avatar = avatar || "avatar/default-avatar.jpg";
+
     try {
       const result = await query(
         `INSERT INTO users (name, email, password_hash, role, avatar, oauth_provider, oauth_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         RETURNING id, name, email, role, created_at, is_active, avatar, oauth_provider, oauth_id`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, name, email, role, created_at, is_active, avatar, oauth_provider, oauth_id`,
         [name, email, hashedPassword, role, avatar, oauth_provider, oauth_id]
       );
       return result.rows[0];
@@ -35,7 +38,6 @@ const UserModel = {
       throw error;
     }
   },
-
   // Find user by email (returns OAuth fields)
   async findByEmail(email) {
     try {
