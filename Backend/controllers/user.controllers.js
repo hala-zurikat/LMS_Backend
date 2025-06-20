@@ -15,6 +15,36 @@ export const getUsers = async (req, res, next) => {
     next(error);
   }
 };
+// فقط الأدمن يستطيع تغيير الدور
+export const updateUserRole = async (req, res, next) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    const userId = req.params.id;
+    const { role } = req.body;
+
+    // تحقق من صلاحية الدور
+    const validRoles = ["student", "instructor", "admin"];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ success: false, message: "Invalid role" });
+    }
+
+    const updated = await UserModel.updateUser(userId, { role });
+
+    if (!updated) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    res.json({ success: true, user: updated });
+  } catch (error) {
+    error.status = error.status || 500;
+    next(error);
+  }
+};
 
 // Get user by ID
 export const getUser = async (req, res, next) => {
