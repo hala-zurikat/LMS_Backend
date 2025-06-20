@@ -18,7 +18,27 @@ export const ModuleModel = {
       throw new Error("Error fetching module by ID: " + error.message);
     }
   },
+  async getModulesWithLessonsByCourseId(courseId) {
+    try {
+      const modulesResult = await query(
+        `SELECT * FROM modules WHERE course_id = $1 ORDER BY "order"`,
+        [courseId]
+      );
+      const modules = modulesResult.rows;
 
+      for (const module of modules) {
+        const lessonsResult = await query(
+          `SELECT * FROM lessons WHERE module_id = $1 ORDER BY "order"`,
+          [module.id]
+        );
+        module.lessons = lessonsResult.rows;
+      }
+
+      return modules;
+    } catch (error) {
+      throw new Error("Error fetching modules and lessons: " + error.message);
+    }
+  },
   async create(data) {
     try {
       const { course_id, title, description, order } = data;

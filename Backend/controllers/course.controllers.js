@@ -33,6 +33,22 @@ export const CourseController = {
     }
   },
 
+  // الدالة المعدلة لجلب محتوى الكورس كامل
+  async getCourseContent(req, res) {
+    const { id } = req.params;
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid course ID" });
+
+    try {
+      const courseContent = await CourseModel.getCourseContentById(id);
+      if (!courseContent)
+        return res.status(404).json({ error: "Course not found" });
+
+      res.json(courseContent);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  },
+
   async create(req, res) {
     const { error } = courseSchema.validate(req.body);
     if (error) return res.status(400).json({ error: error.details[0].message });
