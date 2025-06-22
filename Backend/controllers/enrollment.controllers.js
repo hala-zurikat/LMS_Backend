@@ -71,7 +71,32 @@ export const EnrollmentController = {
       res.status(500).json({ error: error.message });
     }
   },
+  async updateProgress(req, res) {
+    try {
+      const userId = req.user?.id || req.session?.userId;
+      const { course_id, completedLessonsCount, totalLessons } = req.body;
 
+      if (
+        !userId ||
+        !course_id ||
+        !totalLessons ||
+        completedLessonsCount == null
+      ) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const progress = Math.round((completedLessonsCount / totalLessons) * 100);
+
+      const updated = await EnrollmentModel.updateProgress(
+        userId,
+        course_id,
+        progress
+      );
+      res.json({ message: "Progress updated", progress });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
   async update(req, res) {
     const { id } = req.params;
     try {
