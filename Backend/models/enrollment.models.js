@@ -74,6 +74,14 @@ export const EnrollmentModel = {
       throw new Error("Error creating enrollment: " + error.message);
     }
   },
+  async updateProgress(user_id, course_id, progress) {
+    const result = await db.query(
+      `UPDATE enrollments SET progress = $1
+     WHERE user_id = $2 AND course_id = $3 RETURNING *`,
+      [progress, user_id, course_id]
+    );
+    return result.rows[0];
+  },
 
   async update(id, data) {
     try {

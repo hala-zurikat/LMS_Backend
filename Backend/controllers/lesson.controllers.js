@@ -1,5 +1,6 @@
 import LessonModel from "../models/lesson.models.js";
 import { lessonSchema } from "../validations/lesson.validation.js";
+import QuizModel from "../models/quiz.models.js";
 
 const lessonController = {
   async getAll(req, res) {
@@ -20,8 +21,25 @@ const lessonController = {
       const lesson = await LessonModel.getById(id);
       if (!lesson) return res.status(404).json({ error: "Lesson not found" });
 
+      if (lesson.content_type === "quiz") {
+        const questions = await QuizModel.getByLessonId(id);
+        console.log("Questions from DB:", questions);
+
+        // أنشئ كائن جديد بدل تعديل lesson مباشرة
+        const lessonWithQuestions = {
+          ...lesson,
+          questions: questions.map((q) => ({
+            ...q,
+            options: Array.isArray(q.options) ? q.options : [],
+          })),
+        };
+
+        return res.json(lessonWithQuestions);
+      }
+
       res.json(lesson);
     } catch (error) {
+      console.error("❌ Error in getById:", error);
       res.status(500).json({ error: error.message });
     }
   },

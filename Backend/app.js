@@ -22,6 +22,7 @@ import { notFound, errorHandler } from "./middleware/error.js";
 import courseRoutes from "./routes/course.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import instructorRoutes from "./routes/instructor.routes.js";
+import adminCoursesRoutes from "./routes/adminCourse.routes.js";
 
 dotenv.config();
 
@@ -58,10 +59,11 @@ app.use(
   cors({
     origin: process.env.CORS_ORIGIN || "http://localhost:3000",
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"], // أضفت PATCH هنا
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 // 5. Rate limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 دقيقة
@@ -90,6 +92,8 @@ app.use("/api/courses", courseRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/instructor", instructorRoutes);
 app.use("/api/admin/users", userRoutes);
+app.use("/api/admin/courses", adminCoursesRoutes);
+app.use("/api/admin", adminRoutes);
 
 // 8. Health check
 app.get("/health", (req, res) => res.json({ status: "OK" }));
@@ -113,5 +117,4 @@ app.get("/", (req, res) => {
 // 10. Error handling middleware
 app.use(notFound);
 app.use(errorHandler);
-
 export default app;
