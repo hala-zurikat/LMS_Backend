@@ -4,7 +4,7 @@ const QuizModel = {
   async getAll() {
     try {
       const res = await query("SELECT * FROM quizzes ORDER BY created_at DESC");
-      return res.rows;
+      return res.rows; // parsing done in controller
     } catch (error) {
       throw new Error("Error fetching quizzes: " + error.message);
     }
@@ -18,7 +18,7 @@ const QuizModel = {
       if (res.rows.length === 0) {
         return null;
       }
-      return res.rows[0];
+      return res.rows[0]; // parsing done in controller
     } catch (error) {
       throw new Error("Error fetching quiz by id: " + error.message);
     }
@@ -33,7 +33,7 @@ const QuizModel = {
         "SELECT * FROM quizzes WHERE lesson_id = $1 ORDER BY created_at DESC",
         [lesson_id]
       );
-      return res.rows;
+      return res.rows; // parsing done in controller
     } catch (error) {
       throw new Error("Error fetching quizzes by lesson id: " + error.message);
     }
@@ -53,7 +53,13 @@ const QuizModel = {
       const res = await query(
         `INSERT INTO quizzes (lesson_id, question, options, correct_answer, max_score)
          VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-        [lesson_id, question, options, correct_answer, max_score]
+        [
+          lesson_id,
+          question,
+          options, // assumed already stringified in controller
+          correct_answer,
+          max_score,
+        ]
       );
       return res.rows[0];
     } catch (error) {
@@ -71,9 +77,17 @@ const QuizModel = {
         throw new Error("Invalid lesson id");
 
       const res = await query(
-        `UPDATE quizzes SET lesson_id = $1, question = $2, options = $3, correct_answer = $4, max_score = $5, updated_at = CURRENT_TIMESTAMP
+        `UPDATE quizzes 
+         SET lesson_id = $1, question = $2, options = $3, correct_answer = $4, max_score = $5, updated_at = CURRENT_TIMESTAMP
          WHERE id = $6 RETURNING *`,
-        [lesson_id, question, options, correct_answer, max_score, id]
+        [
+          lesson_id,
+          question,
+          options, // assumed already stringified in controller
+          correct_answer,
+          max_score,
+          id,
+        ]
       );
       if (res.rows.length === 0) {
         return null;

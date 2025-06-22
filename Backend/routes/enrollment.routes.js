@@ -9,5 +9,6 @@ router.get("/:id", EnrollmentController.getById);
 router.post("/", EnrollmentController.create);
 router.put("/:id", EnrollmentController.update);
 router.delete("/:id", EnrollmentController.delete);
+router.patch("/progress", authenticate, EnrollmentController.updateProgress);
 
 export default router;

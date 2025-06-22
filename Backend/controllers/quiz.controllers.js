@@ -5,7 +5,14 @@ const quizController = {
   async getAll(req, res) {
     try {
       const quizzes = await QuizModel.getAll();
-      res.json(quizzes);
+
+      // Parse options to array
+      const parsed = quizzes.map((q) => ({
+        ...q,
+        options: JSON.parse(q.options),
+      }));
+
+      res.json(parsed);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -18,6 +25,8 @@ const quizController = {
 
       const quiz = await QuizModel.getById(id);
       if (!quiz) return res.status(404).json({ error: "Quiz not found" });
+
+      quiz.options = JSON.parse(quiz.options);
 
       res.json(quiz);
     } catch (error) {
@@ -32,7 +41,13 @@ const quizController = {
         return res.status(400).json({ error: "Invalid lesson id" });
 
       const quizzes = await QuizModel.getByLessonId(lesson_id);
-      res.json(quizzes);
+
+      const parsed = quizzes.map((q) => ({
+        ...q,
+        options: JSON.parse(q.options),
+      }));
+
+      res.json(parsed);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -47,7 +62,15 @@ const quizController = {
           .json({ errors: error.details.map((e) => e.message) });
       }
 
-      const newQuiz = await QuizModel.create(value);
+      // Convert options to JSON string for PostgreSQL
+      const quizData = {
+        ...value,
+        options: JSON.stringify(value.options),
+      };
+
+      const newQuiz = await QuizModel.create(quizData);
+      newQuiz.options = value.options; // return it as array in the response
+
       res.status(201).json(newQuiz);
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -69,7 +92,13 @@ const quizController = {
           .json({ errors: error.details.map((e) => e.message) });
       }
 
-      const updatedQuiz = await QuizModel.update(id, value);
+      const updatedQuiz = await QuizModel.update(id, {
+        ...value,
+        options: JSON.stringify(value.options),
+      });
+
+      updatedQuiz.options = value.options;
+
       res.json(updatedQuiz);
     } catch (error) {
       res.status(500).json({ error: error.message });
