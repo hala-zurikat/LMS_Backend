@@ -15,29 +15,39 @@ const lessonController = {
   async getById(req, res) {
     try {
       const id = parseInt(req.params.id, 10);
-      if (isNaN(id))
+      if (isNaN(id)) {
         return res.status(400).json({ error: "Invalid lesson id" });
+      }
 
       const lesson = await LessonModel.getById(id);
-      if (!lesson) return res.status(404).json({ error: "Lesson not found" });
+      if (!lesson) {
+        return res.status(404).json({ error: "Lesson not found" });
+      }
 
       if (lesson.content_type === "quiz") {
         const questions = await QuizModel.getByLessonId(id);
-        console.log("Questions from DB:", questions);
-
-        // أنشئ كائن جديد بدل تعديل lesson مباشرة
         const lessonWithQuestions = {
           ...lesson,
-          questions: questions.map((q) => ({
-            ...q,
-            options: Array.isArray(q.options) ? q.options : [],
-          })),
+          questions: questions.map((q) => {
+            let optionsParsed = [];
+            try {
+              optionsParsed = JSON.parse(q.options || "[]");
+            } catch (err) {
+              console.warn(
+                `⚠️ Invalid JSON in options for quiz id ${q.id}, returning empty array`
+              );
+              optionsParsed = [];
+            }
+            return {
+              ...q,
+              options: optionsParsed,
+            };
+          }),
         };
-
         return res.json(lessonWithQuestions);
       }
 
-      res.json(lesson);
+      return res.json(lesson);
     } catch (error) {
       console.error("❌ Error in getById:", error);
       res.status(500).json({ error: error.message });
@@ -47,8 +57,9 @@ const lessonController = {
   async getByModuleId(req, res) {
     try {
       const module_id = parseInt(req.params.module_id, 10);
-      if (isNaN(module_id))
+      if (isNaN(module_id)) {
         return res.status(400).json({ error: "Invalid module id" });
+      }
 
       const lessons = await LessonModel.getByModuleId(module_id);
       res.json(lessons);
@@ -78,11 +89,14 @@ const lessonController = {
   async update(req, res) {
     try {
       const id = parseInt(req.params.id, 10);
-      if (isNaN(id))
+      if (isNaN(id)) {
         return res.status(400).json({ error: "Invalid lesson id" });
+      }
 
       const exists = await LessonModel.exists(id);
-      if (!exists) return res.status(404).json({ error: "Lesson not found" });
+      if (!exists) {
+        return res.status(404).json({ error: "Lesson not found" });
+      }
 
       const { error, value } = lessonSchema.validate(req.body, {
         abortEarly: false,
@@ -103,12 +117,14 @@ const lessonController = {
   async delete(req, res) {
     try {
       const id = parseInt(req.params.id, 10);
-      if (isNaN(id))
+      if (isNaN(id)) {
         return res.status(400).json({ error: "Invalid lesson id" });
+      }
 
       const deletedLesson = await LessonModel.delete(id);
-      if (!deletedLesson)
+      if (!deletedLesson) {
         return res.status(404).json({ error: "Lesson not found" });
+      }
 
       res.json({ message: "Lesson deleted successfully" });
     } catch (error) {

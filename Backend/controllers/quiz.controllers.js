@@ -5,13 +5,10 @@ const quizController = {
   async getAll(req, res) {
     try {
       const quizzes = await QuizModel.getAll();
-
-      // Parse options to array
       const parsed = quizzes.map((q) => ({
         ...q,
-        options: JSON.parse(q.options),
+        options: q.options || [],
       }));
-
       res.json(parsed);
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -26,8 +23,7 @@ const quizController = {
       const quiz = await QuizModel.getById(id);
       if (!quiz) return res.status(404).json({ error: "Quiz not found" });
 
-      quiz.options = JSON.parse(quiz.options);
-
+      quiz.options = quiz.options || [];
       res.json(quiz);
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -41,13 +37,20 @@ const quizController = {
         return res.status(400).json({ error: "Invalid lesson id" });
 
       const quizzes = await QuizModel.getByLessonId(lesson_id);
-
       const parsed = quizzes.map((q) => ({
         ...q,
-        options: JSON.parse(q.options),
+        options: q.options || [],
       }));
-
       res.json(parsed);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  async getGroupedByCourseAndModule(req, res) {
+    try {
+      const result = await QuizModel.getGroupedByCourseAndModule();
+      res.json(result);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -62,14 +65,25 @@ const quizController = {
           .json({ errors: error.details.map((e) => e.message) });
       }
 
-      // Convert options to JSON string for PostgreSQL
+      let optionsArray;
+      if (typeof value.options === "string") {
+        optionsArray = value.options
+          .split(",")
+          .map((opt) => opt.trim())
+          .filter((opt) => opt.length > 0);
+      } else if (Array.isArray(value.options)) {
+        optionsArray = value.options;
+      } else {
+        optionsArray = [];
+      }
+
       const quizData = {
         ...value,
-        options: JSON.stringify(value.options),
+        options: optionsArray,
       };
 
       const newQuiz = await QuizModel.create(quizData);
-      newQuiz.options = value.options; // return it as array in the response
+      newQuiz.options = optionsArray;
 
       res.status(201).json(newQuiz);
     } catch (error) {
@@ -92,13 +106,24 @@ const quizController = {
           .json({ errors: error.details.map((e) => e.message) });
       }
 
+      let optionsArray;
+      if (typeof value.options === "string") {
+        optionsArray = value.options
+          .split(",")
+          .map((opt) => opt.trim())
+          .filter((opt) => opt.length > 0);
+      } else if (Array.isArray(value.options)) {
+        optionsArray = value.options;
+      } else {
+        optionsArray = [];
+      }
+
       const updatedQuiz = await QuizModel.update(id, {
         ...value,
-        options: JSON.stringify(value.options),
+        options: optionsArray,
       });
 
-      updatedQuiz.options = value.options;
-
+      updatedQuiz.options = optionsArray;
       res.json(updatedQuiz);
     } catch (error) {
       res.status(500).json({ error: error.message });
