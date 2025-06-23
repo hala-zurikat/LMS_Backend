@@ -21,7 +21,18 @@ export const ModuleController = {
       res.status(500).json({ error: error.message });
     }
   },
-
+  async getByCourseId(req, res) {
+    const { courseId } = req.params;
+    try {
+      const modules = await ModuleModel.getModulesWithLessonsByCourseId(
+        courseId
+      );
+      res.json(modules);
+    } catch (error) {
+      console.error("Error fetching modules with lessons:", error);
+      res.status(500).json({ error: error.message });
+    }
+  },
   async create(req, res) {
     try {
       const { error } = moduleSchema.validate(req.body);
