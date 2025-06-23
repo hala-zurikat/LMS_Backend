@@ -94,6 +94,7 @@ app.use("/api/instructor", instructorRoutes);
 app.use("/api/admin/users", userRoutes);
 app.use("/api/admin/courses", adminCoursesRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/instructor", instructorRoutes);
 
 // 8. Health check
 app.get("/health", (req, res) => res.json({ status: "OK" }));

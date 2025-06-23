@@ -3,6 +3,8 @@ import { ModuleController } from "../controllers/module.controllers.js";
 
 const router = express.Router();
 
+router.get("/course/:courseId", ModuleController.getByCourseId);
+
 router.get("/", ModuleController.getAll);
 router.get("/:id", ModuleController.getById);
 router.post("/", ModuleController.create);

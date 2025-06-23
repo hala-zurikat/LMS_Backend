@@ -4,6 +4,7 @@ import quizController from "../controllers/quiz.controllers.js";
 const router = express.Router();
 
 router.get("/", quizController.getAll);
+router.get("/grouped", quizController.getGroupedByCourseAndModule);
 router.get("/:id", quizController.getById);
 router.get("/lesson/:lesson_id", quizController.getByLessonId);
 router.post("/", quizController.create);
