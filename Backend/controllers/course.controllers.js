@@ -7,7 +7,6 @@ export const CourseController = {
       const { category_id } = req.query;
 
       let courses;
-
       if (category_id) {
         courses = await CourseModel.getCoursesByCategory(category_id);
       } else {
@@ -33,7 +32,7 @@ export const CourseController = {
     }
   },
 
-  // الدالة المعدلة لجلب محتوى الكورس كامل
+  // ✅ لجلب محتوى الكورس (modules + lessons)
   async getCourseContent(req, res) {
     const { id } = req.params;
     if (isNaN(id)) return res.status(400).json({ error: "Invalid course ID" });
@@ -85,6 +84,34 @@ export const CourseController = {
       const course = await CourseModel.deleteCourse(id);
       if (!course) return res.status(404).json({ error: "Course not found" });
       res.json({ message: "Course deleted successfully" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  },
+
+  // ✅ NEW: Get courses by instructor ID
+  async getByInstructorId(req, res) {
+    const { instructorId } = req.params;
+    if (isNaN(instructorId))
+      return res.status(400).json({ error: "Invalid instructor ID" });
+
+    try {
+      const courses = await CourseModel.getCoursesByInstructorId(instructorId);
+      res.json(courses);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  },
+
+  // ✅ NEW: Get enrolled courses by user ID
+  async getByUserId(req, res) {
+    const { userId } = req.params;
+    if (isNaN(userId))
+      return res.status(400).json({ error: "Invalid user ID" });
+
+    try {
+      const courses = await CourseModel.getCoursesByUserId(userId);
+      res.json(courses);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
