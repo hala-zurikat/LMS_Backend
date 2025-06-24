@@ -26,22 +26,23 @@ const QuizModel = {
     correct_answer,
     max_score = 10,
   }) {
+    const optionsJson = JSON.stringify(options); // تحويل المصفوفة إلى JSON string
     const res = await query(
       `INSERT INTO quizzes (lesson_id, question, options, correct_answer, max_score)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [lesson_id, question, options, correct_answer, max_score]
+     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [lesson_id, question, optionsJson, correct_answer, max_score]
     );
     return res.rows[0];
   },
-
   async update(
     id,
     { lesson_id, question, options, correct_answer, max_score = 10 }
   ) {
+    const optionsJson = JSON.stringify(options);
     const res = await query(
       `UPDATE quizzes SET lesson_id = $1, question = $2, options = $3, correct_answer = $4,
-       max_score = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6 RETURNING *`,
-      [lesson_id, question, options, correct_answer, max_score, id]
+     max_score = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6 RETURNING *`,
+      [lesson_id, question, optionsJson, correct_answer, max_score, id]
     );
     return res.rows[0] || null;
   },
