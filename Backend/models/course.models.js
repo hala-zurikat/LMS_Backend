@@ -203,6 +203,23 @@ const CourseModel = {
 
     return course;
   },
+  async searchCourses(searchTerm) {
+    const searchValue = `%${searchTerm.toLowerCase()}%`;
+
+    const result = await query(
+      `SELECT 
+         c.*, 
+         u.name AS instructor_name, 
+         cat.name AS category_name
+       FROM courses c
+       JOIN users u ON c.instructor_id = u.id
+       LEFT JOIN categories cat ON c.category_id = cat.id
+       WHERE LOWER(c.title) LIKE $1 OR LOWER(c.description) LIKE $1`,
+      [searchValue]
+    );
+
+    return result.rows;
+  },
 };
 
 export { CourseModel };

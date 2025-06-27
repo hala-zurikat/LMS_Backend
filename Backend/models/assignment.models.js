@@ -42,6 +42,34 @@ const AssignmentModel = {
     }
   },
 
+  async getAssignmentsByUserId(userId) {
+    try {
+      if (!Number.isInteger(userId) || userId <= 0)
+        throw new Error("Invalid user ID");
+
+      const res = await query(
+        `
+        SELECT 
+          a.*, 
+          l.title AS lesson_title,
+          m.title AS module_title,
+          c.title AS course_title
+        FROM assignments a
+        JOIN lessons l ON a.lesson_id = l.id
+        JOIN modules m ON l.module_id = m.id
+        JOIN courses c ON m.course_id = c.id
+        JOIN enrollments e ON c.id = e.course_id
+        WHERE e.user_id = $1
+        ORDER BY a.deadline DESC
+        `,
+        [userId]
+      );
+      return res.rows;
+    } catch (error) {
+      throw new Error("Error fetching assignments for user: " + error.message);
+    }
+  },
+
   async create({
     lesson_id,
     title,
