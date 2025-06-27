@@ -185,16 +185,45 @@ export async function logout(req, res, next) {
     if (req.session) {
       req.session.destroy((err) => {
         if (err) {
-          return next(err);
+          console.error("Error destroying session", err);
+          return res.status(500).json({
+            success: false,
+            message: "Failed to logout session",
+          });
         }
-        res.clearCookie("accessToken");
-        res.clearCookie("refreshToken");
-        res.json({ success: true, message: "Logged out successfully" });
+
+        res.clearCookie("accessToken", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+        });
+        res.clearCookie("refreshToken", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+        });
+
+        return res.status(200).json({
+          success: true,
+          message: "Logged out successfully",
+        });
       });
     } else {
-      res.clearCookie("accessToken");
-      res.clearCookie("refreshToken");
-      res.json({ success: true, message: "Logged out successfully" });
+      res.clearCookie("accessToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+      });
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Logged out (no active session)",
+      });
     }
   } catch (err) {
     next(err);

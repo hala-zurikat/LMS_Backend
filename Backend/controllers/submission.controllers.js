@@ -1,5 +1,5 @@
 import SubmissionModel from "../models/submission.models.js";
-import { submissionSchema } from "../validations/submission.validation.js";
+// لا تستخدم submissionSchema هنا في التحديث الجزئي، أو تستخدم schema خاص بالتحديث الجزئي
 
 const submissionController = {
   async getAll(req, res) {
@@ -83,16 +83,31 @@ const submissionController = {
       if (!exists)
         return res.status(404).json({ error: "Submission not found" });
 
-      const { error, value } = submissionSchema.validate(req.body, {
-        abortEarly: false,
-      });
-      if (error) {
-        return res
-          .status(400)
-          .json({ errors: error.details.map((e) => e.message) });
+      // تحديث جزئي - نقبل أي حقول موجودة في الجسم (مثلاً grade فقط)
+      const fieldsToUpdate = {};
+      const allowedFields = [
+        "assignment_id",
+        "user_id",
+        "submission_url",
+        "submitted_at",
+        "grade",
+        "feedback",
+      ];
+
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          fieldsToUpdate[field] = req.body[field];
+        }
       }
 
-      const updatedSubmission = await SubmissionModel.update(id, value);
+      if (Object.keys(fieldsToUpdate).length === 0) {
+        return res.status(400).json({ error: "No valid fields to update" });
+      }
+
+      const updatedSubmission = await SubmissionModel.update(
+        id,
+        fieldsToUpdate
+      );
       res.json(updatedSubmission);
     } catch (error) {
       res.status(500).json({ error: error.message });

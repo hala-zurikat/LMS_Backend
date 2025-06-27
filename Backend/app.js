@@ -28,9 +28,9 @@ dotenv.config();
 
 const app = express();
 
-// --- إعداد الـ rate limiters ---
+// ✅ Rate Limiters
 const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 دقيقة
+  windowMs: 15 * 60 * 1000,
   max: 1000,
   message: {
     success: false,
@@ -39,7 +39,7 @@ const generalLimiter = rateLimit({
 });
 
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 دقيقة
+  windowMs: 15 * 60 * 1000,
   max: 5,
   message: {
     success: false,
@@ -47,10 +47,10 @@ const loginLimiter = rateLimit({
   },
 });
 
-// 1. Cookie parser (لازم قبل session)
+// 1. Cookie parser
 app.use(cookieParser());
 
-// 2. Sessions (قبل passport.session())
+// 2. Sessions
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "mydefaultsecretkey",
@@ -65,11 +65,11 @@ app.use(
   })
 );
 
-// 3. Passport initialization and session
+// 3. Passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// 4. Security and Middleware
+// 4. Security + Middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(helmet());
@@ -83,21 +83,20 @@ app.use(
   })
 );
 
-// 5. Rate limiter خاص بتسجيل الدخول
-app.use("/api/auth/login", loginLimiter);
+// ✅ Rate Limiting فقط في بيئة الإنتاج
+if (process.env.NODE_ENV === "production") {
+  app.use("/api/auth/login", loginLimiter);
 
-// 6. Rate limiter عام لباقي الراوتات (باستثناء تسجيل الدخول)
-app.use((req, res, next) => {
-  if (req.path === "/api/auth/login") {
-    return next();
-  }
-  return generalLimiter(req, res, next);
-});
+  app.use((req, res, next) => {
+    if (req.path === "/api/auth/login") return next();
+    return generalLimiter(req, res, next);
+  });
+}
 
-// 7. Logger
+// 5. Logger
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
-// 8. Routes
+// 6. Routes
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/lessons", lessonRoutes);
@@ -112,13 +111,11 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/instructor", instructorRoutes);
 app.use("/api/admin/users", userRoutes);
 app.use("/api/admin/courses", adminCoursesRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/instructor", instructorRoutes);
 
-// 9. Health check
+// 7. Health Check
 app.get("/health", (req, res) => res.json({ status: "OK" }));
 
-// 10. Root endpoint
+// 8. Root endpoint
 app.get("/", (req, res) => {
   res.json(
     createResponse(true, "OAuth 2 Google Authentication API", {
@@ -134,7 +131,7 @@ app.get("/", (req, res) => {
   );
 });
 
-// 11. Error handling middleware
+// 9. Error handlers
 app.use(notFound);
 app.use(errorHandler);
 
