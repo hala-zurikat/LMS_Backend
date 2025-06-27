@@ -40,6 +40,19 @@ const assignmentController = {
     }
   },
 
+  async getByUserId(req, res) {
+    try {
+      const user_id = parseInt(req.params.user_id, 10);
+      if (isNaN(user_id))
+        return res.status(400).json({ error: "Invalid user id" });
+
+      const assignments = await AssignmentModel.getAssignmentsByUserId(user_id);
+      res.json(assignments);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
   async create(req, res) {
     try {
       const { error, value } = assignmentSchema.validate(req.body, {

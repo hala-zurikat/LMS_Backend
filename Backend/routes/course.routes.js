@@ -4,6 +4,7 @@ import { CourseController } from "../controllers/course.controllers.js";
 const router = express.Router();
 
 router.get("/", CourseController.getAll);
+router.get("/search", CourseController.searchCourses); // ✅ دالة البحث
 router.get("/:id", CourseController.getById); // 🟢 هذا لازم يكون قبل أي :param تاني
 router.get("/:id/details", CourseController.getCourseContent);
 router.get("/content/:id", CourseController.getCourseContent); // إذا لسه بدك هذا
