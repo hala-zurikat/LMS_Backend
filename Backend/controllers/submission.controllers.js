@@ -54,25 +54,26 @@ const submissionController = {
       res.status(500).json({ error: error.message });
     }
   },
-
   async create(req, res) {
     try {
-      const { error, value } = submissionSchema.validate(req.body, {
-        abortEarly: false,
-      });
-      if (error) {
-        return res
-          .status(400)
-          .json({ errors: error.details.map((e) => e.message) });
+      const { assignment_id, user_id, submission_url, submitted_at } = req.body;
+
+      if (!assignment_id || !user_id || !submission_url) {
+        return res.status(400).json({ error: "Missing required fields" });
       }
 
-      const newSubmission = await SubmissionModel.create(value);
+      const newSubmission = await SubmissionModel.create({
+        assignment_id,
+        user_id,
+        submission_url,
+        submitted_at: submitted_at || new Date(),
+      });
+
       res.status(201).json(newSubmission);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   },
-
   async update(req, res) {
     try {
       const id = parseInt(req.params.id, 10);
@@ -83,7 +84,6 @@ const submissionController = {
       if (!exists)
         return res.status(404).json({ error: "Submission not found" });
 
-      // تحديث جزئي - نقبل أي حقول موجودة في الجسم (مثلاً grade فقط)
       const fieldsToUpdate = {};
       const allowedFields = [
         "assignment_id",
