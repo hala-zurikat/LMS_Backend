@@ -85,39 +85,32 @@ const SubmissionModel = {
     }
   },
 
-  async update(
-    id,
-    {
-      assignment_id,
-      user_id,
-      submission_url,
-      submitted_at = null,
-      grade = null,
-      feedback = null,
-    }
-  ) {
+  async update(id, fieldsToUpdate) {
     try {
       if (!Number.isInteger(id) || id <= 0)
         throw new Error("Invalid submission id");
-      if (!Number.isInteger(assignment_id) || assignment_id <= 0)
-        throw new Error("Invalid assignment id");
-      if (!Number.isInteger(user_id) || user_id <= 0)
-        throw new Error("Invalid user id");
 
-      const res = await query(
-        `UPDATE submissions SET assignment_id = $1, user_id = $2, submission_url = $3, 
-         submitted_at = COALESCE($4, submitted_at), grade = $5, feedback = $6, updated_at = CURRENT_TIMESTAMP
-         WHERE id = $7 RETURNING *`,
-        [
-          assignment_id,
-          user_id,
-          submission_url,
-          submitted_at,
-          grade,
-          feedback,
-          id,
-        ]
-      );
+      // بناء جملة SQL ديناميكي حسب الحقول المرسلة
+      const setClauses = [];
+      const values = [];
+      let idx = 1;
+
+      for (const key in fieldsToUpdate) {
+        setClauses.push(`${key} = $${idx}`);
+        values.push(fieldsToUpdate[key]);
+        idx++;
+      }
+      // نضيف updated_at
+      setClauses.push(`updated_at = CURRENT_TIMESTAMP`);
+
+      const queryText = `
+      UPDATE submissions SET ${setClauses.join(", ")}
+      WHERE id = $${idx}
+      RETURNING *
+    `;
+      values.push(id);
+
+      const res = await query(queryText, values);
       if (res.rows.length === 0) return null;
       return res.rows[0];
     } catch (error) {

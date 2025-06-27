@@ -41,7 +41,77 @@ const AssignmentModel = {
       );
     }
   },
+  async getAssignmentsWithSubmissionsByInstructor(instructorId) {
+    try {
+      if (!Number.isInteger(instructorId) || instructorId <= 0)
+        throw new Error("Invalid instructor ID");
 
+      const res = await query(
+        `
+      SELECT 
+        a.id AS assignment_id,
+        a.title AS assignment_title,
+        a.description,
+        a.deadline,
+        a.lesson_id,
+        l.title AS lesson_title,
+        c.id AS course_id,
+        c.title AS course_title,
+        s.id AS submission_id,
+        s.user_id,
+        s.submission_url,
+        s.submitted_at,
+        s.grade,
+        u.name AS user_name
+      FROM assignments a
+      JOIN lessons l ON a.lesson_id = l.id
+      JOIN modules m ON l.module_id = m.id
+      JOIN courses c ON m.course_id = c.id
+      LEFT JOIN submissions s ON s.assignment_id = a.id
+      LEFT JOIN users u ON u.id = s.user_id
+      WHERE c.instructor_id = $1
+      ORDER BY a.created_at DESC, s.submitted_at DESC
+      `,
+        [instructorId]
+      );
+
+      // الآن نرتب النتائج كمجموعة واجبات، كل واجب يحتوي على submissions[]
+      const assignmentMap = new Map();
+
+      res.rows.forEach((row) => {
+        if (!assignmentMap.has(row.assignment_id)) {
+          assignmentMap.set(row.assignment_id, {
+            id: row.assignment_id,
+            title: row.assignment_title,
+            description: row.description,
+            deadline: row.deadline,
+            lesson_title: row.lesson_title,
+            course_id: row.course_id,
+            course_title: row.course_title,
+            submissions: [],
+          });
+        }
+
+        if (row.submission_id) {
+          assignmentMap.get(row.assignment_id).submissions.push({
+            id: row.submission_id,
+            user_id: row.user_id,
+            user_name: row.user_name,
+            submission_url: row.submission_url,
+            submitted_at: row.submitted_at,
+            grade: row.grade,
+          });
+        }
+      });
+
+      return Array.from(assignmentMap.values());
+    } catch (error) {
+      throw new Error(
+        "Error fetching instructor assignments with submissions: " +
+          error.message
+      );
+    }
+  },
   async getAssignmentsByUserId(userId) {
     try {
       if (!Number.isInteger(userId) || userId <= 0)
@@ -49,19 +119,25 @@ const AssignmentModel = {
 
       const res = await query(
         `
-        SELECT 
-          a.*, 
-          l.title AS lesson_title,
-          m.title AS module_title,
-          c.title AS course_title
-        FROM assignments a
-        JOIN lessons l ON a.lesson_id = l.id
-        JOIN modules m ON l.module_id = m.id
-        JOIN courses c ON m.course_id = c.id
-        JOIN enrollments e ON c.id = e.course_id
-        WHERE e.user_id = $1
-        ORDER BY a.deadline DESC
-        `,
+      SELECT 
+        a.*, 
+        l.title AS lesson_title,
+        m.title AS module_title,
+        c.title AS course_title,
+        s.id AS submission_id,
+        s.submission_url,
+        s.submitted_at,
+        s.grade
+      FROM assignments a
+      JOIN lessons l ON a.lesson_id = l.id
+      JOIN modules m ON l.module_id = m.id
+      JOIN courses c ON m.course_id = c.id
+      JOIN enrollments e ON c.id = e.course_id
+      LEFT JOIN submissions s 
+        ON s.assignment_id = a.id AND s.user_id = $1
+      WHERE e.user_id = $1
+      ORDER BY a.deadline DESC
+      `,
         [userId]
       );
       return res.rows;
@@ -69,7 +145,6 @@ const AssignmentModel = {
       throw new Error("Error fetching assignments for user: " + error.message);
     }
   },
-
   async create({
     lesson_id,
     title,

@@ -38,8 +38,7 @@ router.post(
 );
 
 // Logout user (requires authentication)
-router.post("/logout", authenticate, logout);
-
++router.post("/logout", logout);
 // Get current authenticated user's profile
 router.get("/me", authenticate, getCurrentUser);
 

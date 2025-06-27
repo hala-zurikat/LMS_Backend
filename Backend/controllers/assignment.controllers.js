@@ -52,6 +52,22 @@ const assignmentController = {
       res.status(500).json({ error: error.message });
     }
   },
+  async getAssignmentsWithSubmissionsByInstructor(req, res) {
+    try {
+      const instructorId = parseInt(req.params.id, 10);
+      if (isNaN(instructorId)) {
+        return res.status(400).json({ error: "Invalid instructor id" });
+      }
+
+      const data =
+        await AssignmentModel.getAssignmentsWithSubmissionsByInstructor(
+          instructorId
+        );
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
 
   async create(req, res) {
     try {
