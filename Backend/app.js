@@ -28,6 +28,25 @@ dotenv.config();
 
 const app = express();
 
+// --- إعداد الـ rate limiters ---
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 دقيقة
+  max: 1000,
+  message: {
+    success: false,
+    message: "Too many requests from this IP, please try again later.",
+  },
+});
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 دقيقة
+  max: 5,
+  message: {
+    success: false,
+    message: "Too many login attempts. Please try again later.",
+  },
+});
+
 // 1. Cookie parser (لازم قبل session)
 app.use(cookieParser());
 
@@ -59,26 +78,26 @@ app.use(
   cors({
     origin: process.env.CORS_ORIGIN || "http://localhost:3000",
     credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"], // أضفت PATCH هنا
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// 5. Rate limiter
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 دقيقة
-  max: 100,
-  message: {
-    success: false,
-    message: "Too many requests from this IP, please try again later.",
-  },
-});
-app.use(limiter);
+// 5. Rate limiter خاص بتسجيل الدخول
+app.use("/api/auth/login", loginLimiter);
 
-// 6. Logger
+// 6. Rate limiter عام لباقي الراوتات (باستثناء تسجيل الدخول)
+app.use((req, res, next) => {
+  if (req.path === "/api/auth/login") {
+    return next();
+  }
+  return generalLimiter(req, res, next);
+});
+
+// 7. Logger
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
-// 7. Routes
+// 8. Routes
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/lessons", lessonRoutes);
@@ -96,10 +115,10 @@ app.use("/api/admin/courses", adminCoursesRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/instructor", instructorRoutes);
 
-// 8. Health check
+// 9. Health check
 app.get("/health", (req, res) => res.json({ status: "OK" }));
 
-// 9. Root endpoint
+// 10. Root endpoint
 app.get("/", (req, res) => {
   res.json(
     createResponse(true, "OAuth 2 Google Authentication API", {
@@ -115,7 +134,8 @@ app.get("/", (req, res) => {
   );
 });
 
-// 10. Error handling middleware
+// 11. Error handling middleware
 app.use(notFound);
 app.use(errorHandler);
+
 export default app;

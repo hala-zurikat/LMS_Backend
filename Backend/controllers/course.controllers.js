@@ -116,4 +116,19 @@ export const CourseController = {
       res.status(500).json({ error: err.message });
     }
   },
+  async searchCourses(req, res) {
+    try {
+      const { query } = req.query;
+
+      if (!query || query.trim() === "") {
+        return res.status(400).json({ error: "Search query is required" });
+      }
+
+      const courses = await CourseModel.searchCourses(query);
+      res.json(courses);
+    } catch (err) {
+      console.error("Search Error:", err);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  },
 };
